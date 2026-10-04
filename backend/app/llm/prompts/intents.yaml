@@ -1,0 +1,75 @@
+# ============================================================
+# Renewsys MES AI Chatbot – Intent / Structured Query Schema
+# ============================================================
+# NOTE: Profit, financial, or any UAT-05 blocked queries
+# must NOT be represented as a supported intent here.
+# SRS K2 (CONFIRMED): no external cloud AI in production.
+# ============================================================
+
+SUPPORTED_INTENTS:
+  - production_summary          # Total production count over a period/line/shift
+  - production_by_date          # Production filtered to a specific date
+  - production_by_shift         # Production filtered to a shift (A/B/C)
+  - production_by_line          # Production filtered to a line (KM1/KM2/KM3)
+  - production_comparison       # Compare two periods, lines, or shifts
+  - defect_summary              # Total defect/bad count
+  - defect_rate                 # Defect rate percentage
+  - scrap_summary               # Total scrap count
+  - scrap_rate                  # Scrap rate percentage
+  - yield_summary               # Yield percentage
+  - departure_summary           # Total departures from station
+  - getin_summary               # Total modules entering station
+  - throughput_summary          # Throughput (departures-based)
+  - oee_summary                 # OEE (data-source TBD – will return PENDING)
+  - wip_summary                 # WIP (D10 undefined – will return PENDING)
+  - downtime_summary            # Downtime (source TBD – will return PENDING)
+  - first_pass_yield            # FPY (D12 undefined – will return PENDING)
+  - rework_summary              # Rework (D12 undefined – will return PENDING)
+  - process_loss                # Process loss (D11 undefined – will return PENDING)
+  - out_of_scope                # Profit, financial, alerts, etc.
+  - unsupported                 # Anything the chatbot cannot answer
+  - clarification_needed        # Ambiguous – needs more info from user
+
+SUPPORTED_METRICS:
+  - total_production
+  - get_in_quantity
+  - departure_quantity
+  - bad_quantity
+  - scrap_quantity
+  - yield
+  - defect_rate
+  - scrap_rate
+  - oee
+  - wip
+  - downtime
+  - throughput
+  - first_pass_yield
+  - rework_rate
+  - process_loss
+  - availability
+  - cycle_time
+
+SUPPORTED_LINES: [KM1, KM2, KM3]
+SUPPORTED_SHIFTS: [A, B, C]
+
+DATE_EXPRESSIONS:
+  - today
+  - yesterday
+  - current_shift
+  - previous_shift
+  - this_week
+  - last_week
+  - last_7_days
+  - last_30_days
+  - last_month
+  - this_month
+  # Specific dates: YYYY-MM-DD
+
+PENDING_BUSINESS_DEFINITION:
+  # These metrics cannot be calculated until SRS open items resolved:
+  oee: "Source unconfirmed (Section 14.2)"
+  wip: "D10 quantity semantics undefined"
+  downtime: "Downtime event log existence TBD"
+  first_pass_yield: "D12 rework loop definition undefined"
+  rework_rate: "D12 rework loop definition undefined"
+  process_loss: "D11 process loss definition undefined"

@@ -1,0 +1,782 @@
+﻿Total pages: 72
+=== PAGE 1 ===
+Renewsys MES AI Chatbot ù Phase 1 Software Requirements 
+Specification (Final Refined)
+Table of Contents
+1. Document Control
+Field Value
+Document Title Renewsys MES AI Chatbot ù Phase 1 
+Software Requirements Specification (Final 
+Refined)
+Project Renewsys Chatbot
+Customer Renewsys India Pvt Ltd
+Primary Plant (Phase 1) Khopoli
+Source Data MES AI Chatbot ù Requirements 
+Responses.xlsx (139 fields; submitted 
+2026-09-25 21:17)
+Stakeholder-Named SRS/UAT Approver Developer (per V3 ù preserved verbatim; 
+organizational approval workflow should still 
+be confirmed)
+Document Version 3.0 (Final Refined)
+Date 2026-09-26
+Prepared For Renewsys stakeholders, IT/DBA, Jinchen 
+MES vendor/developer, implementation 
+team
+Revision History
+Version Date Description
+1.0 2026-09-26 Initial Phase 1 SRS draft
+2.0 2026-09-26 First refinement; added full 
+traceability matrix and 
+stricter classification
+3.0 2026-09-26 Second refinement: corrected 
+Email/Microsoft Teams 
+scope, source-of-truth 
+wording, blank-field 
+handling, and restructured 
+document per finalized 40-
+=== PAGE 2 ===
+Version Date Description
+section outline
+2. Requirements Baseline Status
+Requirements Baseline Status: Partially confirmed; some items are 
+assumptions.
+This statement reflects the respondentÆs own self-assessment (questionnaire field FNL1: 
+ôPartially confirmed; some items are assumptionsö) and governs how this entire document must 
+be read. This SRS is not a fully finalized requirements baseline.
+Several technical and business definitions used throughout this document require validation 
+with:
+ò IT ù network, infrastructure, deployment, and operational questions.
+ò DBA / MES technical owner ù database engine, schema, stored procedures, 
+performance characteristics.
+ò Jinchen MES vendor/developer ù the original MES build team, who may hold 
+information not available to local Renewsys staff (existing integration architecture, 
+APIs, connection mechanisms).
+ò Relevant business/HOD stakeholders ù KPI formulas, business semantics 
+(Material, quantity semantics, process loss, rework), and measurable business 
+outcomes.
+Every requirement, architectural note, and traceability entry in this document is classified 
+using exactly one of the following labels, applied consistently and never upgraded to 
+CONFIRMED merely because a value is technically reasonable:
+ò CONFIRMED
+ò STAKEHOLDER-PROVIDED ù REQUIRES TECHNICAL VERIFICATION
+ò AMBIGUOUS
+ò TBD
+ò ASSUMPTION
+ò PROPOSED TECHNICAL SOLUTION
+ò FUTURE PHASE
+ò OUT OF SCOPE
+Classification counts across all 139 questionnaire fields
+Classification Count
+CONFIRMED 74
+AMBIGUOUS 39
+TBD 15
+STAKEHOLDER-PROVIDED ù 8
+=== PAGE 3 ===
+Classification Count
+REQUIRES TECHNICAL 
+VERIFICATION
+FUTURE PHASE 1
+N/A ù Administrative 2
+(ASSUMPTION and PROPOSED TECHNICAL SOLUTION items are not questionnaire responses 
+themselves ù they appear throughout this SRS wherever the implementation team fills a gap 
+and are consolidated in Sections 32û34.)
+An unanswered or content-free questionnaire field (e.g., a blank cell, or a response of ôNoneö 
+that provides no usable information) is never converted into ôNo,ö ôNot required,ö or ôOut of 
+Scopeö in this document. It is marked TBD ù No response provided, and the underlying 
+decision is left open until confirmed.
+3. Executive Summary
+Renewsys India Pvt. Ltd.áwants a conversational assistant (the ôRenewsys Chatbotö) that lets 
+MES users at the Khopoli plant ask questions in plain English and receive information 
+currently obtained by manually querying or reporting from the Jinchen MES database. Phase 1 
+targets a single plant, approximately 15û20 total users, and 3û4 concurrent users.
+The stakeholder intent, in the respondentÆs own words (A4): ôInstead of retrieving data directly 
+from the database we can take help from this chat what it can translate from plain English to 
+the queries and generate the required fields.ö This is a stated business need, not a technical 
+design; how it is technically achieved (an LLM, a semantic layer, a Text-to-SQL pipeline) is a 
+matter for the implementation team to propose, and any such proposal is explicitly labeled 
+PROPOSED TECHNICAL SOLUTION throughout this document.
+The respondents are MES users, not the developers of the underlying MES ù which was built 
+by a third-party (Jinchen) team whose server the respondents describe as being ôin Chinaö and 
+something ôwe do not handle.ö As a result, the database engine, schema, stored procedures, 
+connection architecture, several business-data definitions, KPI formulas, and portions of the 
+security/network environment are not currently known and are documented here as TBD 
+rather than assumed.
+This third revision of the SRS makes several corrections identified during review:
+1. Email and Microsoft Teams remain identified as in-scope systems (Q1), not 
+reclassified as Future Phase ù their integration detail is TBD, which is a different status 
+from being out of scope.
+2. The complete 139-field questionnaire traceability matrix replaces any earlier 
+ôrepresentative sampleö table (Section 38).
+3. The Source-of-Truth register no longer uses the word ôpresumedö ù Jinchen MES is 
+documented as a candidate, not yet validated source for each domain.
+=== PAGE 4 ===
+4. Genuinely unanswered questionnaire fields are marked TBD, not silently 
+converted into ôNoö/ôNoneö/ôOut of Scope.ö
+5. The ambiguity between the MES server being ôin Chinaö/unmanaged locally and 
+the application being planned on the company LAN with direct connectivity is 
+documented as an open technical issue rather than silently reconciled.
+4. Problem Statement
+Stakeholder-provided (A4, CONFIRMED as a statement of intent): ôInstead of retrieving 
+data directly from the database we can take help from this chat what it can translate from plain 
+English to the queries and generate the required fields.ö
+Users currently retrieve MES information manually. No quantified pain point (cost of delay, 
+error rate, hours lost) was supplied, and none is invented here.
+5. Objectives and Scope
+5.1 Business Objective
+Stakeholder intent (derived from A4): enable users to ask MES-related questions in natural 
+language and retrieve relevant information without directly querying the database.
+Classification: STAKEHOLDER-PROVIDED / DERIVED ù measurable business outcomes 
+TBD.
+A5 (ôWhat business outcomes are expected?ö) was answered ôAllö ù classified AMBIGUOUS. 
+No quantified time savings, productivity improvement, cost reduction, or adoption target is 
+invented in this SRS. Detailed, measurable success criteria require confirmation with the 
+business stakeholders.
+5.2 Phase 1 Scope Summary
+See Section 7 for the full scope statement. In brief: single plant (Khopoli), read-only MES 
+querying via natural language, session-scoped chat, the confirmed KPI/response-type/date-
+expression lists, and RBAC ù all subject to the classifications recorded throughout this 
+document.
+6. Stakeholders and Users
+Role Source Classification
+Plant Manager A6 CONFIRMED
+=== PAGE 5 ===
+Role Source Classification
+Production Manager A6 CONFIRMED
+Quality Manager A6 CONFIRMED
+Production Planning A6 CONFIRMED
+Management / Director A6 CONFIRMED
+IT / System 
+Administrator
+A6 CONFIRMED
+ò Approximate total users: ~15û20 (A7, CONFIRMED as an approximate figure).
+ò Primary contacts: ôManagers, HODö (A9) ù role labels only, no individual names or 
+specific responsibilities. Classification: AMBIGUOUS. No names are invented; contact 
+detail is TBD.
+7. Phase 1 Scope
+Confirmed Phase 1 scope elements:
+ò Single plant: Khopoli (A3, A8 ù CONFIRMED).
+ò ~15û20 total users, ~3û4 concurrent users (A7, R1 ù CONFIRMED as approximate).
+ò Natural-language question answering against MES data, read-only (F1, F2 ù 
+CONFIRMED).
+ò Session-scoped conversational memory (K5 ù CONFIRMED).
+ò Natural-language date/time and shift expressions (L3, L4 ù CONFIRMED), up to 30 
+days of history (L2 ù CONFIRMED), ~24-hour data freshness (L1 ù CONFIRMED).
+ò Response types: natural language, tables, KPI cards, charts, drill-down, and SQL 
+visibility for Admin/IT only (I1, I3 ù CONFIRMED).
+ò Export capability in general, exact formats TBD (I2 ù AMBIGUOUS on format).
+ò Local application authentication with RBAC (G5, G6 ù CONFIRMED); detailed role-to-
+data permissions TBD (G7, J2 ù AMBIGUOUS).
+ò The KPI name list in Section 14 (M1 ù CONFIRMED as names; formulas/source/targets 
+NOT confirmed).
+ò MES, Email, and Microsoft Teams as systems in scope, per Section 8 (Q1 ù CONFIRMED 
+as in-scope systems; implementation detail TBD).
+8. Systems in Scope
+Confirmed (Q1): ôMES, Email, Microsoft Teams.ö
+System In Scope? Integration Detail Classification
+MES (Jinchen MES) Yes Read-only query 
+access; 
+CONFIRMED 
+(scope) / TBD 
+=== PAGE 6 ===
+System In Scope? Integration Detail Classification
+schema/engine TBD (technical detail)
+Email Yes No APIs, 
+authentication, or 
+workflow supplied 
+(Q2 blank)
+CONFIRMED 
+(scope) / TBD 
+(implementation)
+Microsoft Teams Yes No APIs, 
+authentication, or 
+workflow supplied 
+(Q2 blank)
+CONFIRMED 
+(scope) / TBD 
+(implementation)
+Email and Microsoft Teams must not be presented as confirmed Future Phase items ù see 
+Section 22 for the dedicated treatment of this correction.
+9. Functional Requirements
+9.1 Central Phase 1 Objective
+Per V1 (CONFIRMED): ôChatbot should answer the questions and create required chart/graphs 
+etc. by reading the DB.ö
+ID Requirement Priority Source Classification
+FR-CORE-001 The system shall 
+let users ask 
+MES-related 
+questions in 
+natural English 
+and receive an 
+answer, table, 
+KPI card, or 
+chart derived 
+from a read-only 
+MES query.
+High V1, A4, F1, F2 CONFIRMED
+FR-CORE-002 The system shall 
+restrict database 
+operations to 
+SELECT only, 
+using a 
+dedicated read-
+only database 
+account.
+High F2, F6 CONFIRMED
+FR-CORE-003 The system shall 
+support session-
+Medium K5 CONFIRMED
+=== PAGE 7 ===
+ID Requirement Priority Source Classification
+scoped 
+conversational 
+memory so 
+follow-up 
+questions can 
+use prior 
+context.
+FR-CORE-004 The system shall 
+ask a clarifying 
+question rather 
+than guess when 
+a question is 
+ambiguous.
+High U1 CONFIRMED
+FR-CORE-005 The system shall 
+not always 
+refuse to answer 
+when required 
+data is 
+unavailable; the 
+exact fallback 
+behavior beyond 
+this negative 
+constraint is 
+proposed.
+Medium U2 CONFIRMED 
+(negative 
+constraint) / 
+PROPOSED 
+(fallback design)
+FR-CORE-006 The system shall 
+restrict visibility 
+of generated 
+SQL/source 
+query detail to 
+Admin/IT users.
+High I3 CONFIRMED
+FR-CORE-007 The system shall 
+display data 
+freshness / last-
+updated 
+information 
+with answers.
+Medium I4 CONFIRMED
+FR-CORE-008 The system shall 
+limit historical 
+querying to the 
+most recent 30 
+days unless 
+otherwise 
+approved.
+Medium L2 CONFIRMED
+FR-CORE-009 The system shall Medium I2 CONFIRMED 
+=== PAGE 8 ===
+ID Requirement Priority Source Classification
+provide export 
+of results in 
+general; exact 
+formats are a 
+proposed 
+technical 
+solution pending 
+approval.
+(capability) / 
+PROPOSED 
+(formats)
+FR-CORE-010 The system shall 
+distinguish, in 
+its output, 
+directly 
+measured MES 
+data from 
+calculated/deriv
+ed values, 
+analytical 
+interpretations, 
+and 
+recommendatio
+ns/predictions.
+High N3, N4 CONFIRMED
+How these are technically achieved is addressed in Section 23 (Architecture) as a Proposed 
+Technical Solution, not itself part of the stakeholder requirement.
+10. Natural-Language Query Processing
+10.1 Confirmed Example Questions (E1)
+Preserved, grammar lightly normalized, intent unchanged:
+ò ôWhat was todayÆs production?ö
+ò ôHow many units entered Glass?ö
+ò ôHow many units are in Packing?ö
+ò ôFrom which line does this module get produced?ö
+ò ôAt what time was the module produced?ö
+ò ôHow many modules were created on this day?ö
+ò ôHow many modules are produced on this line?ö
+ò ôHow many scrap/bad units were found?ö
+ò ôHow much production happened on this day?ö
+=== PAGE 9 ===
+10.2 Broad Question Categories (STAKEHOLDER-PROVIDED ù AMBIGUOUS)
+The stakeholder answered ôAllö for the following categories, which is preserved as a high-level, 
+non-exhaustive scope statement rather than expanded into invented detailed requirements:
+ò Quality/defect questions (E2)
+ò WIP/process-movement questions (E3)
+ò Shift/line/area comparison questions (E4)
+ò Date-range/historical questions (E5)
+ò Management/executive questions (E6)
+Detailed question patterns and UAT acceptance criteria for each category require 
+clarification with the stakeholders.
+11. Query Interpretation and Clarification
+Confirmed (U1): Ask a clarification question rather than guess. The system shall:
+1. Detect ambiguity in the incoming question.
+2. Ask a clarifying question rather than proceed on a guess.
+3. Avoid generating a potentially misleading query while the interpretation is unresolved.
+4. Execute the query only once the interpretation is sufficiently clear.
+Examples of ambiguity requiring clarification (Proposed, illustrative): ambiguous date range, 
+ambiguous line, ambiguous shift, ambiguous product/material, ambiguous quantity definition, 
+ambiguous KPI reference.
+Must-not-answer criteria (E7) and clarification-trigger criteria beyond U1 (E8) were 
+both answered ôOver to youö ù classified AMBIGUOUS, i.e., delegated to the implementation 
+team. Any resulting policy is a PROPOSED safe-answering approach, not a stakeholder-
+confirmed rule: avoid answering when the requested information is outside authorized data, 
+the required field is unavailable, the query remains ambiguous after clarification, confidence is 
+insufficient, the data source cannot support the answer, or the requested operation is not 
+permitted (e.g., a write).
+The system must never invent an answer when underlying business definitions are unknown 
+(e.g., Material, process loss, rework ù see Section 20).
+12. Database Access
+12.1 Confirmed Stakeholder Requirements
+ò Phase 1 is read-only now; transactional actions ômay be added laterö ù not a Phase 1 
+commitment (F1, CONFIRMED).
+=== PAGE 10 ===
+ò SELECT-only operations (F2, CONFIRMED).
+ò No database writes required (F3, CONFIRMED).
+ò Stakeholder reports required tables/views as ôFully accessibleö (F4, CONFIRMED as 
+stated) ù see caveat below.
+ò No specific tables/fields identified as never-accessible (F5: ôNoö ù CONFIRMED, no 
+restriction named).
+ò Dedicated read-only database account required (F6, CONFIRMED).
+12.2 Important Caveat on ôFully Accessibleö
+ôFully accessibleö (F4) does not remove the need for least-privilege validation, credential 
+security, a database permissions review, and production security approval before go-live. It 
+reflects the absence of a named restriction from this respondent, not an instruction to bypass 
+standard access governance. No table-level restriction is invented; any governance layer 
+applied on top of F4 is a PROPOSED TECHNICAL SOLUTION.
+12.3 Database Technology
+B1 (ôDatabase technologyö) = ôOver to you.ö Classification: AMBIGUOUS.
+No database engine (SQL Server, MySQL, PostgreSQL, Oracle, MongoDB, or otherwise) is 
+claimed or inferred ù including from the port number (8000) supplied in B3, which is not 
+diagnostic of engine type and is not used to infer one here.
+Stated design response:
+Database technology/engine is not confirmed. The application architecture shall use 
+an adapter-based database access layer so the final implementation can be selected 
+after IT/DBA/MES vendor confirmation.
+This is a PROPOSED TECHNICAL SOLUTION.
+12.4 Server Location and Network Path ù Open Technical Issue
+The questionnaire contains a statement that has not been reconciled and is documented as an 
+explicit open issue rather than silently resolved:
+B6 states: ôMes server is in China we do not handleö ù i.e., the MES server is 
+described as being in China and not managed by the respondent. G1/G2 state: the 
+planned FastAPI/application server location is ôsame company LAN / server roomö 
+with ôDirect LANö connectivity to the database.
+This SRS does not assume what ôChinaö means in this context ù it is not assumed to 
+indicate a purely local server, a cloud-hosted server, a remote vendor-hosted server, or any 
+other specific topology. The physical/network location and ownership/access path of the 
+Jinchen MES server require clarification. IT/MES vendor confirmation is required to determine 
+whether 10.69.12.20 is directly reachable from the intended application server on the company 
+LAN, and what network/security path (VPN, dedicated link, firewall rules, etc.) is actually 
+required to reach it. This is carried forward as Open Issue OI-04 (Section 35).
+=== PAGE 11 ===
+12.5 Database Discovery ù Proposed, Not Stakeholder-Named
+Because the schema must be requested from IT/DBA (C1, CONFIRMED) and the engine is 
+undetermined (B1, AMBIGUOUS), a controlled, read-only schema-discovery mechanism may be 
+used by the implementation team. This is a PROPOSED TECHNICAL SOLUTION, not a 
+capability named by the stakeholder. It must never write, alter, or delete data, and must never 
+execute arbitrary user- or LLM-generated SQL against the production MES.
+13. SQL Generation and Safety
+13.1 Confirmed Controls
+Control Source Classification
+SELECT-only database 
+operations
+F2, U4 CONFIRMED
+Dedicated read-only 
+database account
+F6, U4 CONFIRMED
+13.2 SQL Validation ù Explicitly Not Requested
+U3 (ôShould generated SQL be validated before execution?ö) = ôNo.ö This SRS does not 
+state that Renewsys explicitly requested a SQL validation/parser layer. Any statement to the 
+contrary in an earlier draft is corrected here.
+13.3 Proposed Technical Safety Controls
+The following are engineering recommendations proposed to safely implement the confirmed 
+read-only requirement ù none are stakeholder-requested, and each must be labeled as such if 
+adopted:
+PROPOSED TECHNICAL SAFETY CONTROL - SQL parser/validator - Statement-type 
+enforcement (blocking DDL/DML at the application layer) - Query timeout - 
+Resource/result-size limits - Database-side permission enforcement (in addition to 
+the confirmed read-only account)
+Never permitted regardless of any proposed control: INSERT, UPDATE, DELETE, DROP, ALTER, 
+TRUNCATE, CREATE, GRANT, REVOKE, or administrative commands (consistent with 
+F1/F2/F3).
+=== PAGE 12 ===
+14. KPI Requirements
+14.1 Confirmed KPI Names (M1)
+Total production, Get-in quantity, Departure quantity, Bad quantity, Scrap quantity, Yield, 
+Defect rate, Scrap rate, Process loss, OEE, Availability, Performance, Quality, Downtime, Cycle 
+time, WIP, Throughput, First Pass Yield, Rework rate.
+KPI names are stakeholder-requested. Official calculation formulas, 
+numerator/denominator definitions, exclusions, aggregation rules, and business ownership are 
+not supplied in the questionnaire and must be validated before production use.
+14.2 KPI Validation Table
+KPI
+Proposed 
+Formula
+Required Source 
+Fields
+Confirmed by 
+Renewsys?
+Validation 
+Owner
+Total Production PROPOSED ù 
+sum of validated 
+production/get-
+in events
+Production/Get-
+in event count
+No Business/MES 
+SME
+Get-in Quantity PROPOSED ù 
+count of Get-in 
+events per D4 
+definition
+Get-in station 
+events
+No Business/MES 
+SME
+Departure 
+Quantity
+PROPOSED ù 
+count of 
+Departure 
+events per D5 
+definition
+Departure 
+station events
+No Business/MES 
+SME
+Bad Quantity PROPOSED ù 
+count of Bad-
+flagged units per 
+D6 definition
+Quality/defect 
+events
+No Quality Manager
+Scrap Quantity PROPOSED ù 
+count of Scrap-
+flagged units per 
+D7 definition
+Scrap events No Quality Manager
+Yield PROPOSED ù 
+Good units ≈ 
+Total units
+Production + 
+Quality data
+No Business/MES 
+SME
+Defect Rate PROPOSED ù 
+Bad units ≈ 
+Total units
+Quality data No Quality Manager
+Scrap Rate PROPOSED ù 
+Scrap units ≈ 
+Total units
+Scrap data No Quality Manager
+=== PAGE 13 ===
+KPI
+Proposed 
+Formula
+Required Source 
+Fields
+Confirmed by 
+Renewsys?
+Validation 
+Owner
+Process Loss Not proposed ù 
+depends on 
+unresolved D11
+Undetermined No Business/MES 
+SME
+OEE PROPOSED ù 
+Availability ╫ 
+Performance ╫ 
+Quality
+Downtime, 
+throughput, 
+quality data
+No Production 
+Manager
+Availability PROPOSED ù 
+Run time ≈ 
+Planned 
+production time
+Downtime data No Production 
+Manager
+Performance PROPOSED ù 
+(Ideal cycle time 
+╫ count) ≈ Run 
+time
+Cycle time + 
+counts
+No Production 
+Manager
+Quality (OEE 
+component)
+PROPOSED ù 
+Good units ≈ 
+Total units
+Quality data No Quality Manager
+Downtime Not proposed ù 
+source 
+unconfirmed
+Downtime event 
+log (existence 
+unconfirmed)
+No Production 
+Manager
+Cycle Time Not proposed ù 
+source 
+unconfirmed
+Process 
+timestamps
+No Production 
+Manager
+WIP Not proposed ù 
+depends on 
+unresolved D10
+Undetermined No Business/MES 
+SME
+Throughput Not proposed ù 
+depends on 
+confirmed 
+production 
+definition
+Production 
+events
+No Production 
+Manager
+First Pass Yield Not proposed ù 
+depends on 
+unresolved D12
+Undetermined No Business/MES 
+SME
+Rework Rate Not proposed ù 
+depends on 
+unresolved D12
+Undetermined No Business/MES 
+SME
+Every ôProposedö formula in this table is labeled PROPOSED ù REQUIRES BUSINESS 
+VALIDATION and must never be presented elsewhere in this document, or to any reviewer, as 
+a Renewsys-approved formula.
+=== PAGE 14 ===
+14.3 KPI Source of Truth
+M3 = ôOver to you.ö Classification: AMBIGUOUS.
+KPI source-of-truth ownership is TBD. The final source and calculation ownership 
+shall be established with the business/MES/IT stakeholders.
+No source-of-truth system is invented (see also Section 21).
+14.4 KPI Thresholds and Targets
+M4 = ôOver to you.ö Classification: AMBIGUOUS.
+No target value, or green/yellow/red threshold band, is invented. If the architecture proposes a 
+configurable-thresholds mechanism, it is labeled PROPOSED TECHNICAL SOLUTION; actual 
+target values must be supplied and approved by the appropriate business owner.
+15. Analytics
+Confirmed capabilities (N1): day-over-day comparison, shift comparison, line comparison, 
+process comparison, product/material comparison, trend analysis, top loss processes, top defect 
+processes, anomaly detection, root-cause investigation support, and what-if calculations.
+Measured vs.ácalculated distinction (N3, CONFIRMED ù ôYesö): output must clearly 
+separate source data (directly retrieved), derived/calculated data, analytical interpretation, and 
+recommendation/prediction.
+Recommendations/predictions (N4, CONFIRMED ù ôYes, informational onlyö): may be 
+included but must never be represented as automated commands, guaranteed predictions, 
+operational instructions, or transactional actions.
+Advanced predictive analytics: V7 (future features) is blank. Advanced predictive 
+capabilities are not introduced as a confirmed Future Phase item on that basis. They are 
+classified PROPOSED / TBD, and detailed predictive-model requirements require later 
+validation if and when the business chooses to pursue them.
+Root-cause investigation support is interpreted as ôsupport through correlated operational 
+data and drill-down analysis,ö not a claim of autonomous causal inference; several underlying 
+inputs (process loss, rework) remain unresolved (Section 20) and limit what can currently be 
+delivered.
+=== PAGE 15 ===
+16. Charts and Visualization
+Required response types (I1, CONFIRMED): natural-language answer, tables, KPI cards, bar 
+charts, line charts, pie/donut charts, trend charts, drill-down details, and source/query details 
+for Admin/IT users only (I3, CONFIRMED).
+Export (I2) = ôAll.ö Classification: AMBIGUOUS on exact format. Proposed formats (e.g., 
+CSV/Excel/PDF) are not confirmed; any implementation choice must be labeled PROPOSED, 
+pending implementation approval.
+Branding/UI (I5) = ôYes.ö Confirmed as intent; no specific branding guidelines were supplied 
+ù exact visual specification is TBD.
+Freshness (I4) = ôYesö ù CONFIRMED; freshness/last-updated timestamp must accompany 
+answers.
+17. Conversational Context
+Confirmed (K5): the assistant should remember previous messages within an active chat 
+session (e.g., ôWhat about KM2?ö after a prior production question resolves using the earlier 
+context). Interpreted, absent further specification, as conversation context retained during 
+an active session only ù persistent cross-session/long-term memory is not assumed or 
+required.
+18. Authentication and RBAC
+Item Response Classification
+Chatbot authentication 
+mechanism
+Local application accounts 
+(G5)
+CONFIRMED
+RBAC required Yes (G6) CONFIRMED
+Platform roles Admin and Users (J1) CONFIRMED
+UserÆs plant/area/line/role 
+known from login
+Yes (J3) CONFIRMED (requirement); 
+mechanism TBD
+Row-level security No (J4) CONFIRMED ù not a Phase 
+1 requirement
+Per-role data-domain 
+permissions
+ôAllö (J2) / ôOn the mes 
+developer not on usö (G7)
+AMBIGUOUS
+J3 wording, precisely stated:
+=== PAGE 16 ===
+The system shall make the authenticated userÆs plant/area/line/role context 
+available to authorization and query-processing components. Exact enforcement 
+rules and permission mappings require confirmation.
+This SRS does not claim that every query will automatically be filtered by plant/line unless and 
+until that filtering logic is confirmed with the business/MES developer side. Detailed role-to-
+data-domain permissions remain owned by ôthe MES developerö per G7 and are not currently 
+documented; Phase 1 therefore implements RBAC as a configurable framework (PROPOSED 
+TECHNICAL SOLUTION), not hard-coded final permissions.
+19. Security
+Confirmed security-relevant items:
+Item Response Classification
+Public internet exposure of 
+the database
+Not permitted (G4) CONFIRMED
+External cloud AI processing 
+of manufacturing data
+Not permitted; data must 
+stay in-network (K2)
+CONFIRMED
+Read-only database account Required (F6) CONFIRMED
+SELECT-only operation Required (F2) CONFIRMED
+RBAC Required (G6) CONFIRMED
+Row-level security Not required (J4) CONFIRMED
+Sensitive-value masking in 
+logs
+Required (T3) CONFIRMED
+Applicable 
+compliance/security 
+standards
+No response provided (T4) TBD ù not interpreted as 
+ôno standards applyö
+K2 stated formally:
+Production AI processing shall not send MES/company data to an external cloud AI 
+service unless the requirement is explicitly changed and approved.
+No specific compliance/security standard (ISO 27001, SOC 2, GDPR, IndiaÆs DPDP Act, or 
+otherwise) is claimed to apply; T4 is a genuinely blank field and is marked TBD, not ôno 
+python : Traceback (most recent call last):
+At line:1 char:1
++ python -c "
++ ~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "<string>", line 9, in <module>
+    print(text)
+    ~~~~~^^^^^^
+  File "C:\Users\manth\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2192' in position 1320: character maps to <undefined>
+compliance standards.ö
+=== PAGE 17 ===
+20. Data Freshness and Time Handling
+ò Data freshness: within approximately 24 hours (L1, CONFIRMED). No 
+real-time/streaming freshness is claimed.
+ò Maximum historical query scope: 30 days (L2, CONFIRMED) ù a stated chatbot query-
+scope limit; whether older MES data physically exists but is simply excluded from 
+chatbot querying is TBD, not clarified by the stakeholder.
+ò Natural-language date questions required (L3, CONFIRMED); supported expressions 
+(L4, CONFIRMED): Today, Yesterday, Current shift, Previous shift, Last 7 days, Last 30 
+days, This week, Last month, Custom date range, Custom time range.
+ò Shift timing (L6, CONFIRMED): Morning 07:00û15:00, Second 15:00û23:00, Night 23:00û
+07:00.
+ò Business definitions (D9, CONFIRMED): Shift = A/B/C; Line = KM1/KM2/KM3. 
+ShiftName mapping (D1, CONFIRMED): A = Morning, B = Second, C = Night.
+ò Timezone: L5 = ôWe donÆt know.ö Classification: AMBIGUOUS/TBD ù 
+IT/business confirmation required. Asia/Kolkata (IST) is not assumed merely 
+because the plant is located in India.
+Other business definitions (preserved verbatim, D9/D4ûD8)
+Term Definition
+Area Location
+Workorder Order which we get to produce
+Start Time Date/time of the report/process
+End Time Date/time ôrequiredö for the report/process
+Getin Module entering that station
+Departures Module leaving station
+Bad Module with defect
+Scrap Damaged/scrapped module
+ExcludeDuplicates Existing report behavior related to duplicate 
+barcode scanner scans
+Fields where the stakeholder said ôIDKö (TBD ù Business/MES Validation Required; no 
+meaning invented)
+ò Material (D9)
+ò Quantity semantics ù cumulative vs.átransactional (D10)
+ò Process loss calculation method (D11)
+ò Rework loops ù returns to earlier processes (D12)
+ò Duplicate/repeated event semantics beyond the confirmed barcode-scan issue (D13)
+=== PAGE 18 ===
+21. Integration Scope
+This section formalizes the Source-of-Truth Register, replacing any earlier ôpresumedö 
+language.
+Q3 (ôWhich system is the source of truth for production, quality, inventory, work 
+orders, and other domains?ö) = ôNot knowing.ö Classification: AMBIGUOUS.
+Source-of-Truth Register
+Domain Candidate Source Confirmed? Status
+Production Jinchen MES ù 
+not yet validated
+No TBD
+Quality Jinchen MES ù 
+not yet validated
+No TBD
+WIP Jinchen MES ù 
+not yet validated
+No TBD
+Work Orders Jinchen MES ù 
+not yet validated
+No TBD
+Process events Jinchen MES ù 
+not yet validated
+No TBD
+Financial / Profit TBD No TBD
+Email/Teams 
+integration data
+TBD No TBD
+Jinchen MES is documented as a candidate source, not a confirmed source of truth, for any 
+domain. This is a deliberate correction from language such as ôMES ù presumed,ö which 
+overstates the current state of knowledge.
+Profit specifically: MES availability of revenue, cost, margin, or profit information has not 
+been established. See Section 30 (UAT) for the corresponding acceptance-criteria treatment.
+22. Email and Microsoft Teams
+This is a major correction from an earlier draft, which must not recur.
+The questionnaire (Q1, CONFIRMED) explicitly lists Email and Microsoft Teams as systems in 
+scope, alongside MES. Email and Microsoft Teams must not be presented as 
+automatically Future Phase, and must not appear under a confirmed ôFuture Phaseö list.
+Item Status
+Identified as in-scope systems CONFIRMED (Q1)
+APIs/interfaces Not supplied (Q2 blank) ù TBD
+Authentication mechanism Not supplied ù TBD
+=== PAGE 19 ===

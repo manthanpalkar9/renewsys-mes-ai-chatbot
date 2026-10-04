@@ -1,0 +1,89 @@
+[
+  {
+    "user": "What is today's total production?",
+    "expected": {
+      "intent": "production_summary",
+      "metric": "total_production",
+      "line": null,
+      "shift": null,
+      "date_expression": "today",
+      "needs_clarification": false
+    }
+  },
+  {
+    "user": "Show me KM2 production for yesterday",
+    "expected": {
+      "intent": "production_by_date",
+      "metric": "total_production",
+      "line": "KM2",
+      "shift": null,
+      "date_expression": "yesterday",
+      "needs_clarification": false
+    }
+  },
+  {
+    "user": "How many defects in the morning shift?",
+    "expected": {
+      "intent": "defect_summary",
+      "metric": "bad_quantity",
+      "line": null,
+      "shift": "A",
+      "date_expression": "today",
+      "needs_clarification": false
+    }
+  },
+  {
+    "user": "What is the yield for KM1 last week?",
+    "expected": {
+      "intent": "yield_summary",
+      "metric": "yield",
+      "line": "KM1",
+      "shift": null,
+      "date_expression": "last_week",
+      "needs_clarification": false
+    }
+  },
+  {
+    "user": "Compare production between KM1 and KM2 today",
+    "expected": {
+      "intent": "production_comparison",
+      "metric": "total_production",
+      "line": null,
+      "shift": null,
+      "date_expression": "today",
+      "comparison": {
+        "line_a": "KM1",
+        "line_b": "KM2"
+      },
+      "needs_clarification": false
+    }
+  },
+  {
+    "user": "What is the profit margin?",
+    "expected": {
+      "intent": "out_of_scope",
+      "needs_clarification": false,
+      "out_of_scope_reason": "Financial data is not available in the MES (SRS UAT-05)"
+    }
+  },
+  {
+    "user": "Show me the OEE",
+    "expected": {
+      "intent": "oee_summary",
+      "metric": "oee",
+      "needs_clarification": false,
+      "out_of_scope_reason": "OEE data source not yet confirmed (Section 14.2)"
+    }
+  },
+  {
+    "user": "What is the scrap rate for the night shift this week?",
+    "expected": {
+      "intent": "scrap_rate",
+      "metric": "scrap_rate",
+      "line": null,
+      "shift": "C",
+      "date_expression": "this_week",
+      "needs_clarification": false
+    }
+  }
+]

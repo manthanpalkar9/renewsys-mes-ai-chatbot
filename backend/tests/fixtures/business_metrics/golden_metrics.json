@@ -1,0 +1,122 @@
+[
+  {
+    "scenario": "normal_production",
+    "records": [
+      {
+        "record_date": "2026-10-01",
+        "line": "KM1",
+        "shift": "A",
+        "area": "Assembly",
+        "getin_quantity": 1000,
+        "departure_quantity": 900,
+        "bad_quantity": 100,
+        "scrap_quantity": 25,
+        "workorder": "WO-1"
+      }
+    ],
+    "expected": {
+      "total_production": 1000,
+      "departure_quantity": 900,
+      "bad_quantity": 100,
+      "scrap_quantity": 25,
+      "yield": 90.00,
+      "defect_rate": 10.00,
+      "scrap_rate": 2.50
+    }
+  },
+  {
+    "scenario": "perfect_production",
+    "records": [
+      {
+        "record_date": "2026-10-01",
+        "line": "KM2",
+        "shift": "B",
+        "area": "Assembly",
+        "getin_quantity": 1000,
+        "departure_quantity": 1000,
+        "bad_quantity": 0,
+        "scrap_quantity": 0,
+        "workorder": "WO-2"
+      }
+    ],
+    "expected": {
+      "total_production": 1000,
+      "yield": 100.00,
+      "defect_rate": 0.00,
+      "scrap_rate": 0.00
+    }
+  },
+  {
+    "scenario": "zero_production",
+    "records": [
+      {
+        "record_date": "2026-10-01",
+        "line": "KM3",
+        "shift": "C",
+        "area": "Assembly",
+        "getin_quantity": 0,
+        "departure_quantity": 0,
+        "bad_quantity": 0,
+        "scrap_quantity": 0,
+        "workorder": "WO-3"
+      }
+    ],
+    "expected": {
+      "total_production": 0,
+      "yield": "zero_denominator",
+      "defect_rate": "zero_denominator",
+      "scrap_rate": "zero_denominator"
+    }
+  },
+  {
+    "scenario": "missing_data",
+    "records": [],
+    "expected": {
+      "total_production": "missing_data",
+      "yield": "missing_data",
+      "defect_rate": "missing_data"
+    }
+  },
+  {
+    "scenario": "multiple_shifts",
+    "records": [
+      {
+        "record_date": "2026-10-01",
+        "line": "KM1",
+        "shift": "A",
+        "area": "Assembly",
+        "getin_quantity": 100,
+        "departure_quantity": 90,
+        "bad_quantity": 10,
+        "scrap_quantity": 2
+      },
+      {
+        "record_date": "2026-10-01",
+        "line": "KM1",
+        "shift": "B",
+        "area": "Assembly",
+        "getin_quantity": 200,
+        "departure_quantity": 190,
+        "bad_quantity": 10,
+        "scrap_quantity": 3
+      },
+      {
+        "record_date": "2026-10-01",
+        "line": "KM1",
+        "shift": "C",
+        "area": "Assembly",
+        "getin_quantity": 300,
+        "departure_quantity": 280,
+        "bad_quantity": 20,
+        "scrap_quantity": 5
+      }
+    ],
+    "expected": {
+      "total_production": 600,
+      "bad_quantity": 40,
+      "scrap_quantity": 10,
+      "defect_rate": 6.67,
+      "yield": 93.33
+    }
+  }
+]
