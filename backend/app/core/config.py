@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     mes_db_password: Optional[str] = None
     mes_db_engine: Optional[str] = None
     mes_adapter: str = "mock"
+    jinchen_api_url: str = "http://10.69.12.10:8000"
+    jinchen_api_token: Optional[str] = None
+    jinchen_api_timeout: float = 30.0
     query_timeout_seconds: int = 30
     query_max_rows: int = 10000
     history_days_limit: int = 30
