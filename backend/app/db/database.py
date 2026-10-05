@@ -16,6 +16,25 @@ async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
+    # Automatically ensure default admin user exists
+    async with AsyncSessionLocal() as session:
+        from sqlalchemy import select
+        from app.models.user import User, UserRole
+        from app.core.security import get_password_hash
+
+        result = await session.execute(select(User).where(User.username == "admin"))
+        if not result.scalar_one_or_none():
+            admin_user = User(
+                username="admin",
+                email="admin@renewsys.com",
+                hashed_password=get_password_hash("admin123!"),
+                role=UserRole.ADMIN,
+                plant="Khopoli",
+                job_role="IT/System Administrator",
+            )
+            session.add(admin_user)
+            await session.commit()
+
 async def get_db():
     async with AsyncSessionLocal() as session:
         try:
