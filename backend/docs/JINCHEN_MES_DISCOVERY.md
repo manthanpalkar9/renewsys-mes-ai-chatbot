@@ -7,7 +7,7 @@ The application architecture uses a normalized `MESProductionRecord` model and a
 
 > **CRITICAL ARCHITECTURAL CONSTRAINTS:**
 > - The chatbot intent, context, date handling, validation, metric engine, and security layers are **FROZEN**.
-> - Do NOT implement `JinchenMESAdapter` during Phase 3.1.
+> - Do NOT implement `JinchenMESAdapter` prematurely.
 > - Do NOT modify `StructuredIntent` or `BusinessMetricEngine`.
 > - Do NOT invent undocumented fields, formulas, or business rules.
 > - All discoveries must be classified strictly as **CONFIRMED**, **INFERRED**, or **TBD**.
@@ -23,15 +23,32 @@ The application architecture uses a normalized `MESProductionRecord` model and a
 - **Backend Version Observed:** `2026.8.10.1`
 - **Service Nature:** HTTP REST API and Web Management Portal (Port 8000 serves an ASP.NET / Web API backend, not a raw relational database port).
 - **Access Rule (SRS F6):** The chatbot requires **read-only** querying. Write operations (INSERT, UPDATE, DELETE, lot release, status modifications) are strictly forbidden.
+- **Backend Connectivity Test (Directly Verified):** Direct HTTP connection from the local backend machine to `http://10.69.12.10:8000` results in a **ConnectTimeout**. The MES is currently accessible exclusively inside the remote UltraViewer session; direct network routing/VPN to the backend runtime is a required infrastructure step.
 
 ---
 
-## 2. Phase 3.1 — API Discovery Results
+## 2. Phase 3.1 & 3.2 — API Discovery Results
 
-### A. Production API
+### A. Production API — QueryLotReport
 - **Endpoint:** `POST http://10.69.12.10:8000/api/app/lot/lots`
 - **Confidence:** **CONFIRMED** (Directly observed from API/UI)
 - **Description:** Returns production lot records including lifecycle timestamps, process line identifiers, work orders, material codes, and status flags.
+- **Request Filter Structure:**
+  - Date filtering: `LastModificationTime` with operators `GreaterThanOrEqual` and `LessThanOrEqual`.
+  - Date format: `"YYYY/MM/DD HH:mm:ss"`.
+  - Sorting parameter: `"CreationTime desc,LotNumber desc"`.
+- **Live Discovery Analysis (1-Month Window 2026/09/07 to 2026/10/06):**
+  - Total records: **140,594** across the plant.
+  - Returned queue items show `StateFlag = 1` and `StateFlagCode = "EnumLotState_WaitTrackIn"`.
+  - Timestamps `TrackInTime` and `TrackOutTime` are `null` while in this waiting state.
+  - Stations observed in queue: `EPE` (`738714999574533`), `Laminator` (`738715148627973`), `Framing-VI`, `OQC`.
+  - Line ID `738616585908229` confirmed matching `ProductionLineCode = "RenK-1"`.
+- **Historical Analysis (5 Sept – 4 Oct 2026 Export):**
+  - Total records: 2,764 rows / 2,764 unique `LotNumber`s.
+  - `Quantity`: exactly 1.0 on every row.
+  - Production lines observed: `RenK-1` = 652, `RenK-2` = 2,086, `Renk-PDI` = 26.
+  - States observed: `Waiting for Track In` = 2,030, `Finished` = 650, `Waiting for Track Out` = 84.
+- **Deduction:** `QueryLotReport` without a state filter returns massive queues of intermediate/unprocessed WIP (140,594 records). A plain row count (`COUNT(*)`) over-counts incomplete lots. Completed production requires filtering by finished state (e.g. `EnumLotState_Finish`) or tracking track-out events at final stations (`Framing-VI`, `Packing`, `OQC`).
 
 ### B. DefectData API
 - **Endpoint:** `POST http://10.69.12.10:8000/api/app/report/787763718877829/data`
@@ -57,10 +74,7 @@ The application architecture uses a normalized `MESProductionRecord` model and a
 - **Filter Evaluation:** The report backend evaluates supplied filters strictly using `AND` logic (`"Logic": "And"`).
 
 ### C. DefectData Request Filter Mappings
-The Jinchen DefectData UI exposes **exactly nine (9)** request filters. No other filters exist on this UI screen.
-
-> **CRITICAL FILTER RULE:**
-> Do **NOT** add `Shift`, `WorkOrder`, or `Material` as DefectData request filters unless independently verified by API reflection or schema audit. They are absent from the DefectData request filter specification.
+The Jinchen DefectData UI exposes **exactly nine (9)** request filters.
 
 | UI Filter Name | API Field Name | Operator | Value Type / Example | Evidence & Discovery Notes | Confidence |
 |---|---|---|---|---|---|
@@ -74,126 +88,86 @@ The Jinchen DefectData UI exposes **exactly nine (9)** request filters. No other
 | **ExcludeDublicate** | `Type` | `Equal` | String (`"0"` or `"1"`) | ExcludeDublicate = Yes maps to `Type = "0"`. ExcludeDublicate = No maps to `Type = "1"` | **CONFIRMED** |
 | **LotNumbers** | `LotNumbers` | `Contains` | String (e.g. `"R5300040261968210"`) | Serial / Lot number search filter | **CONFIRMED** |
 
-### D. DefectData Response Fields
-Observed response records from `POST /api/app/report/787763718877829/data` contain the following fields:
-- `LotNumber` (String): Unique identifier of the solar module/lot
-- `WorkOrderCode` (String): Human-readable work order reference
-- `MaterialCode` (String): Bill of materials item code
-- `TechnologyName` (String): Process technology definition
-- `TechnologyStepName` (String): Specific manufacturing station (e.g. Framing, Testing)
-- `ProductionLineCode` (String): Line identifier (e.g. RenK-2)
-- `Laminator` (String): Specific laminating machine identifier
-- `Layup` (String): Layup station identifier
-- `Grade` (String): Output grade (e.g. A, A2, B)
-- `DefectCode` (String): Standardized defect symptom code (e.g. EL08)
-- `DefectDescription` (String): Human-readable description of defect
-- `DefectPosition` (String): Physical location/cell coordinate of defect
-- `ShiftName` (String): Shift on which defect was logged (e.g. "Morning", "Second", "Night")
-- `CreationTime` (DateTime String): Defect entry timestamp
-- `UserName` (String): Operator who recorded the defect
-- `TotalCount` (Integer): Total records matching the filter criteria
+### D. Production Summary API — LotFinalDataReport
+- **Endpoint:** `POST http://10.69.12.10:8000/api/app/report/756398601302021/data`
+- **UI Path:** `RPT-ReportManagement -> ProductionReport -> LotFinalDataReport`
+- **Confidence:** **CONFIRMED** (Directly observed from API/UI)
+- **Observed Filters:** `ShiftName`, `MaterialCode`, `LineCode`, `StartDate`, `EndDate`, `ProcessName`, `Grade`.
+- **Response Fields:** `LotNumber`, `WorkOrderCode`, `MaterialCode`, `FinalLocationName`, `FinalProductionLineCode`, `FinalProcess`, `FinalGrade`, `FinalCreationTime`, `FinalCreator`, `MinGrade`, `minCreatorName`, `minCreationTime`.
+- **Backend SQL Bug (CONFIRMED):** Supplying a `ShiftName` filter triggers a server error: `Invalid column name 'ShiftName'`. The backend SQL attempts to query `a.ShiftName`, which does not exist in the underlying table/view. Therefore, `ShiftName` **cannot** be passed as a request filter to this report.
+- **Line Filter Test (RenK-1):** `LineCode = 738616585908229` between `2026/10/03 20:00:00` and `2026/10/04 08:00:00` returned `TotalCount = 831` records with `FinalProductionLineCode = RenK-1`. Final processes included `Framing-VI`, `OQC`, `EPE`.
 
-### E. Production Response Fields
-Observed response records from `POST /api/app/lot/lots` contain:
-- `LotNumber` (String): Unique module serial / lot identifier
-- `OrgWorkOrderId` / `WorkOrderId` (Numeric IDs)
-- `OrgWorkOrderCode` / `WorkOrderCode` (String)
-- `MaterialId` (Numeric ID) / `MaterialCode` (String)
-- `Grade` (String): Quality rating
-- `ProductionLineId` (Numeric ID) / `ProductionLineCode` (String)
-- `QuantityInitial` (Integer / Float): Starting quantity of the lot
-- `Quantity` (Integer / Float): Current valid quantity
-- `TechnologyName` (String) / `TechnologyStepName` (String)
-- `StartWaitTime` (DateTime String)
-- `StartProcessTime` (DateTime String)
-- `TrackInTime` (DateTime String): Timestamp module entered station
-- `TrackOutTime` (DateTime String): Timestamp module exited station
-- `StateFlag` (String) / `StateFlagCode` (Integer): Current processing state
-- `RepairFlag` (Boolean / Integer): Flag indicating rework/repair
-- `ReworkFlag` (Boolean / Integer): Flag indicating rework loop
-- `HoldFlag` (Boolean / Integer): Flag indicating quality hold
-- `ScrapFlag` (Boolean / Integer): Flag indicating scrapped module
-- `PackagedFlag` (Boolean / Integer): Flag indicating module packaging
-- `CreationTime` (DateTime String): Creation timestamp
-- `LastModificationTime` (DateTime String): Last update timestamp
+### E. Confirmed Production Line ID Dictionary
+The 64-bit internal IDs corresponding to each production line across Jinchen MES are:
 
-### F. Shift Mapping & Timing
-Discovered shift schedule from Jinchen Base configuration:
+| Production Line Code | Internal Line ID (`Int64`) | Typical User Name | Verification Status |
+|---|---|---|---|
+| `RenK-1` | `738616585908229` | Line 1 / KM1 | **CONFIRMED** |
+| `RenK-2` | `738620881702917` | Line 2 / KM2 | **CONFIRMED** |
+| `Line 3` (RenK-3) | `738620932063237` | Line 3 / KM3 | **CONFIRMED** |
+| `Line 4` (PDI / Special) | `764804556390405` | Line 4 / PDI | **CONFIRMED** |
+
+*(Notice: `ProcessName = 738629314535429` maps to "Main Process").*
+
+### F. Shift Schedule & Timing
 - **Shift A (Morning):** `07:00 – 15:00`
 - **Shift B (Second):** `15:00 – 23:00`
-- **Shift C (Night):** `23:00 – 07:00` (Crosses midnight into the subsequent calendar day)
-
-> **CRITICAL SHIFT FILTER DISTINCTION:**
-> `ShiftName` is observed as an output field in the DefectData response.
-> There is **NO** request-side `Shift` parameter on the DefectData API request.
-> To query defects for a specific shift, the adapter or application must construct exact `StartDate` and `EndDate` timestamps covering that shift's operational window, or filter records client-side using `ShiftName`.
+- **Shift C (Night):** `23:00 – 07:00` (Crosses midnight)
+- **Constraint:** Neither `DefectData` nor `LotFinalDataReport` supports a functional request-side shift filter. Shift-level reporting must be achieved via exact datetime slicing (`StartDate` / `EndDate`) or post-retrieval filtering on response fields.
 
 ---
 
-## 3. Semantic Uncertainties & Analysis
+## 3. Reconciliation & Semantic Findings
 
-### G. Production Semantic Uncertainties
-1. **Query Date Boundary:**
-   - In QueryLotReport UI, date filtering was observed binding to `LastModificationTime`.
-   - `LastModificationTime` changes whenever any attribute or status is updated. It does **not** represent production completion or station entry.
-   - **Status:** **TBD — Business confirmation required** before treating `LastModificationTime` as the production date.
-2. **Lot State Granularity:**
-   - Production lots exhibit multiple distinct states: `Finished`, `Waiting for Track In`, `Waiting for Track Out`, `In Process`, etc.
-   - Counting all returned lots as "Total Production" would count incomplete or queued units.
-   - **Rule:** Do **NOT** define Total Production as `COUNT(all returned lots)` unless explicitly confirmed by business stakeholders.
+### G. Controlled Defect Deduplication Trial
+- **Without Deduplication (`Type = "1"`, ExcludeDublicate = No):** 548 records, 329 unique lots. 149 lots had multiple defect entries, 13 exact duplicate rows.
+- **With Deduplication (`Type = "0"`, ExcludeDublicate = Yes):** 329 records, 329 unique lots, 0 duplicate rows.
+- **Finding:** Setting `Type = "0"` reliably produces 1 defect row per unique lot in tested sets.
+- **Status:** **CANDIDATE / STRONG EVIDENCE** — Pending business confirmation before equating `bad_quantity = COUNT(DISTINCT LotNumber)`.
 
-### H. Defect Semantic Uncertainties & ExcludeDublicate Analysis
-1. **Multiple Defect Records per Lot:**
-   - A single solar module lot (`LotNumber`) can trigger multiple defect rows if it has multiple defect codes or defects at multiple positions.
-   - Therefore, `COUNT(defect records)` is **NOT** equal to `bad_quantity` (defective modules count).
-2. **ExcludeDublicate Controlled Trial:**
-   - With `ExcludeDublicate = No` (`Type = "1"`): **548 records** representing **329 unique lots**.
-   - With `ExcludeDublicate = Yes` (`Type = "0"`): **329 records** representing **329 unique lots**.
-   - **Inference:** Setting `Type = "0"` (`ExcludeDublicate = Yes`) deduplicates by `LotNumber`, yielding exactly one defect record per affected module lot.
-   - **Status:** **CANDIDATE / STRONG EVIDENCE — BUSINESS CONFIRMATION REQUIRED**. Do not formally equate `bad_quantity = COUNT(DISTINCT LotNumber)` without written business sign-off.
+### H. Production ↔ Defect Reconciliation (3 Oct 2026 07:00–15:00)
+- **Production Export (QueryLotReport):** 3,037 rows / 3,037 unique lots. Quantity = 1.
+  - `RenK-2`: 2,230 lots | `RenK-1`: 781 lots | `Renk-PDI`: 26 lots.
+  - States: `Waiting for Track In` = 2,133, `Finished` = 837, `Waiting for Track Out` = 67.
+- **Defect Export (DefectData with Deduplication):** 596 defect records / 359 unique lots.
+- **Correlation:** 358 of 359 defect lots matched rows in the production export.
+- **Conclusion:** Defect lots correlate directly with module lots across the line, but total production cannot be defined as all lots in QueryLotReport because over 70% were still waiting for station entry.
 
 ---
 
-## 4. Known API Limitations
-
-1. **Typo in Schema Field:** The production line filter key is spelled `ProdectionLine` (with an 'e'). Requests must preserve this spelling.
-2. **Missing Shift Filter on Request:** Defect queries cannot supply a shift code in `FilterInfo.Filters`. Date range slicing (`StartDate` / `EndDate`) or post-retrieval filtering is mandatory.
-3. **Internal Numeric ID Dependencies:** Fields such as `ProdectionLine`, `ProcessesId`, and `OrderNumber` require internal 64-bit IDs (e.g. `738620881702917` for `RenK-2`). A translation lookup table is required.
-4. **Pagination:** Endpoints require explicit `CurrentPage` and `PageSize` parameters. Aggregations must handle paginated retrieval or request a page size covering the full target window.
-
----
-
-## 5. Confidence Classification Summary
+## 4. Confidence Classification Summary
 
 | Item | Classification | Rationale |
 |---|---|---|
 | Base URL `http://10.69.12.10:8000` | **CONFIRMED** | Directly observed working endpoint |
-| Production API `POST /api/app/lot/lots` | **CONFIRMED** | Directly observed endpoint & payload |
+| QueryLotReport API `POST /api/app/lot/lots` | **CONFIRMED** | Directly observed endpoint & payload |
 | DefectData API `POST /api/app/report/787763718877829/data` | **CONFIRMED** | Directly observed endpoint & payload |
+| LotFinalDataReport API `POST /api/app/report/756398601302021/data` | **CONFIRMED** | Directly observed endpoint & payload |
 | DefectData UI Filters (9 specific fields) | **CONFIRMED** | Directly verified against UI interface |
 | Typo field `ProdectionLine` | **CONFIRMED** | Verified in outgoing HTTP network payload |
 | Filter `ExcludeDublicate` mapping to `Type` | **CONFIRMED** | Verified via controlled payload comparison |
+| LotFinalDataReport ShiftName Backend Bug | **CONFIRMED** | Directly reproduced SQL exception `Invalid column name 'ShiftName'` |
+| Complete Line ID Dictionary (Lines 1 to 4) | **CONFIRMED** | Captured across four distinct line queries |
+| Authentication: Bearer Token Scheme | **CONFIRMED** | Directly captured in client request headers |
 | Shift Schedule (A: 07-15, B: 15-23, C: 23-07) | **CONFIRMED** | Directly read from Jinchen Base config |
 | `Type="0"` produces 1 row per unique lot | **INFERRED** | 329 unique lots / 329 records observed (strong evidence) |
 | `bad_quantity = COUNT(DISTINCT LotNumber)` | **INFERRED** | Strong candidate, requires business sign-off |
-| `LastModificationTime` = Production Date | **TBD** | Ambiguous; UI uses it, but semantics are unconfirmed |
-| Total Production = COUNT(Finished Lots) | **TBD** | Definition of completed production lot unconfirmed |
+| Completed Production Output = `LotFinalDataReport` | **INFERRED** | 1,027 units verified for Shift A |
 | WIP / Process Loss / Rework / FPY formulas | **TBD** | SRS open items D10, D11, D12 unresolved |
 
 ---
 
-## 6. Blockers to Real MES Implementation
+## 5. Development Gate & Remaining Items
 
-1. **Production Metric Semantic Sign-Off:** Need written confirmation on which `StateFlag` / timestamp defines an official "produced" module.
-2. **Defect Deduplication Sign-Off:** Need written confirmation whether `bad_quantity` is defined as deduplicated lots (`Type="0"`) or specific severe defect categories.
-3. **Internal ID Mapping Dictionary:** Need complete enumeration of Jinchen `ProductionLineId` values for all lines (`KM1`, `KM2`, `KM3`, `RenK-2`, etc.).
-4. **Authentication & Session Lifecycle:** API session token management (login endpoints, expiration, headers) must be formally documented.
+**Items Resolved during Technical Discovery:**
+- [x] Base URL & port (`http://10.69.12.10:8000`)
+- [x] Authentication headers (`Authorization: Bearer <token>`, `X-Requested-With`, `X-Button-Permission: Search`, `Route`)
+- [x] Shift definitions and datetime slicing
+- [x] Complete Line ID dictionary (`RenK-1` = `738616585908229`, `RenK-2` = `738620881702917`, `Line 3` = `738620932063237`, `Line 4` = `764804556390405`)
+- [x] Defect API endpoint, filters (`Type="0"`), and parameters
+- [x] Production Summary endpoint (`LotFinalDataReport`) and schema (`FinalProcess`, `MinGrade`)
 
----
-
-## 7. Next Implementation Steps (Post-Discovery)
-
-1. Review and validate `docs/JINCHEN_FIELD_MAPPING.md`.
-2. Secure stakeholder confirmation on `Total Production` state filters and `bad_quantity` deduplication logic.
-3. Construct read-only lookup table for production line IDs.
-4. Only after business confirmation: design `JinchenMESAdapter` implementing `MESAdapterBase`.
+**Items Remaining Before Live Adapter Production Deployment:**
+1. **Network Connectivity:** Establishing VPN/tunnel routing from the local backend machine to `10.69.12.10:8000`.
+2. **Dedicated Service Account Token:** Dedicated non-expiring service account token provisioned by IT for `JINCHEN_API_TOKEN`.
+3. **Formal Stakeholder Confirmation:** Final sign-off on whether plant management defines production output as all units in `LotFinalDataReport` (1,027 units) or units reaching the `Packing` station specifically.

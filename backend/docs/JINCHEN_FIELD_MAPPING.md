@@ -85,7 +85,8 @@ Endpoint: `POST http://10.69.12.10:8000/api/app/lot/lots`
 | `TrackInTime` | DateTime String | *Candidate `record_date`* | Timestamp module entered station. | **CONFIRMED** (Field observed) |
 | `TrackOutTime` | DateTime String | *Candidate `record_date`* | Timestamp module exited station. Candidate for production timestamp. | **CONFIRMED** (Field observed) |
 | `LastModificationTime` | DateTime String | *Candidate `record_date`* | Filtered by UI, but unconfirmed if equal to production date. | **TBD — requires confirmation from Jinchen/IT/DBA** |
-| `StateFlag` / `StateFlagCode` | String / Int | *Production Filter* | States observed: "Finished", "Waiting for Track In", "Waiting for Track Out". | **CONFIRMED** (Field observed) / **TBD** (Valid production states) |
+| `StateFlag` | Int | *Production Filter* | Integer code (e.g., `1` = WaitTrackIn). | **CONFIRMED** |
+| `StateFlagCode` | String | *Production Filter* | Exact string code (e.g., `"EnumLotState_WaitTrackIn"`, `"EnumLotState_Finish"`). | **CONFIRMED** (Field observed) / **TBD** (Valid production states) |
 | `ScrapFlag` | Boolean / Int | `scrap_quantity` | Flag indicating scrapped module. | **INFERRED** (Requires validation) |
 | `ReworkFlag` / `RepairFlag` | Boolean / Int | *TBD (D12 Rework)* | Flag indicating rework loop. | **INFERRED** (Pending D12 definition) |
 | `HoldFlag` | Boolean / Int | *TBD — adapter mapping decision required* | Quality hold indicator. | **CONFIRMED** (Field observed) |
@@ -93,6 +94,25 @@ Endpoint: `POST http://10.69.12.10:8000/api/app/lot/lots`
 | `Grade` | String | *TBD — adapter mapping decision required* | Module quality grade. | **CONFIRMED** (Field observed) |
 
 ---
+
+## 4.5. LotFinalDataReport Response Fields → Normalized Model Mapping
+
+Endpoint: `POST http://10.69.12.10:8000/api/app/report/756398601302021/data`
+
+| Jinchen Report Field | Field Type | Target Normalized Field | Mapping Logic & Evidence | Confidence |
+|---|---|---|---|---|
+| `LotNumber` | String | *TBD — adapter mapping decision required* | Unique module serial identifier. | **CONFIRMED** |
+| `WorkOrderCode` | String | `workorder` | Work order identifier. | **CONFIRMED** |
+| `MaterialCode` | String | *TBD — adapter mapping decision required* | Product item code. | **CONFIRMED** |
+| `FinalProductionLineCode` | String | `line` | Physical line identifier (e.g. `RenK-1`, `RenK-2`). | **CONFIRMED** |
+| `FinalProcess` | String | `area` | Process station for final stage (`Packing`, `Framing`, `OQC`, `EPE`). | **CONFIRMED** |
+| `MinGrade` | String | *Quality Grade* | Actual quality grade classification (e.g. `\"A1\"`, `\"A2\"`, `\"Z\"`, `\"Rework\"`). Note: `FinalGrade` is misassigned to LotNumber in Jinchen backend view. | **CONFIRMED** |
+| `FinalCreationTime` | DateTime String | `record_date` | Creation/completion timestamp in ISO format (`YYYY-MM-DDTHH:mm:ss.sss`). | **CONFIRMED** |
+| `FinalCreator` / `minCreatorName` | String | *Equipment / Station* | Station machine identifier (e.g. `\"Packing-201\"`, `\"90-VI-KM2-1\"`, `\"EAP\"`). | **CONFIRMED** |
+| `FinalLocationName` | String | *TBD — adapter mapping decision required* | Factory location (`\"Renewsys Khopoli\"`). | **CONFIRMED** |
+
+> **BACKEND BUG WARNING:** Do not pass `ShiftName` as a filter to `LotFinalDataReport`. The backend query fails with `Invalid column name 'ShiftName'`. Shift slicing must use `StartDate` and `EndDate`.
+
 
 ## 5. Shift Schedule & Request Translation Rules
 
