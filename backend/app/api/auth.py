@@ -19,11 +19,15 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
         logger.info("Failed login attempt for username: {}", request.username)
         raise HTTPException(status_code=401, detail="Invalid username or password")
     if not user.is_active: raise HTTPException(status_code=403, detail="Account disabled")
+    username = user.username
+    role_val = user.role.value
+    plant_val = user.plant
+    line_val = user.line
     user.last_login_at = datetime.now(timezone.utc)
     await db.commit()
-    logger.info("User logged in: username={}", user.username)
-    token = create_access_token(data={"sub": user.username, "role": user.role.value, "plant": user.plant, "line": user.line})
-    return TokenResponse(access_token=token, token_type="bearer", role=user.role.value, username=user.username)
+    logger.info("User logged in: username={}", username)
+    token = create_access_token(data={"sub": username, "role": role_val, "plant": plant_val, "line": line_val})
+    return TokenResponse(access_token=token, token_type="bearer", role=role_val, username=username)
 
 @router.post("/logout")
 async def logout(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):

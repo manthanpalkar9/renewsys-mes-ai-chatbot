@@ -230,6 +230,36 @@ class MockLLMProvider(LLMProviderBase):
             is_mock=True,
         )
 
+    async def generate_sql(
+        self,
+        question: str,
+        schema_context: dict,
+        date_context: dict,
+        filters: Optional[dict] = None,
+    ) -> LLMResponse:
+        filters = filters or {}
+        where_clauses = []
+        if filters.get("line"):
+            where_clauses.append(f"mock_line = '{filters['line']}'")
+        if filters.get("shift"):
+            where_clauses.append(f"mock_shift = '{filters['shift']}'")
+        if date_context.get("date_from"):
+            where_clauses.append(f"mock_date >= '{date_context['date_from']}'")
+        if date_context.get("date_to"):
+            where_clauses.append(f"mock_date <= '{date_context['date_to']}'")
+        where_str = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+        sql = (
+            f"SELECT mock_line, mock_shift, mock_area,\n"
+            f"       SUM(mock_getin) AS total_getin,\n"
+            f"       SUM(mock_departures) AS total_departures,\n"
+            f"       SUM(mock_bad) AS total_bad,\n"
+            f"       SUM(mock_scrap) AS total_scrap\n"
+            f"FROM mock_production_events\n"
+            f"{where_str}\n"
+            f"GROUP BY mock_line, mock_shift, mock_area"
+        )
+        return LLMResponse(content=sql, provider=self.PROVIDER_NAME, is_mock=True)
+
     async def format_answer(self, question: str, query_result: dict, data_type: str) -> LLMResponse:
         answer = await self.generate_response(
             question,
